@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script>
+      (function() {
+        try {
+          var _origFetch = window.fetch;
+          Object.defineProperty(window, 'fetch', {
+            get: function() { return _origFetch; },
+            set: function(val) { _origFetch = val; },
+            configurable: true,
+            enumerable: true
+          });
+        } catch (e) {}
+
+        window.addEventListener('error', function(event) {
+          if (event && event.filename && (event.filename.indexOf('chrome-extension://') !== -1 || event.filename.indexOf('moz-extension://') !== -1)) {
+            event.preventDefault();
+            event.stopPropagation();
+          }
+        }, true);
+      })();
+    </script>
+    <title>behocvui - Thế Giới Tiếng Anh Vui Nhộn Cho Trẻ Em</title>
+    <meta name="description" content="Ứng dụng học tiếng Anh cho trẻ em behocvui với 100 cấp độ chủ đề phong phú, trò chơi sinh động, luyện phát âm, phần thưởng huy hiệu, bảng xếp hạng và báo cáo cho phụ huynh." />
+    <meta property="og:title" content="behocvui - Thế Giới Tiếng Anh Vui Nhộn Cho Trẻ Em" />
+    <meta property="og:description" content="Ứng dụng học tiếng Anh cho trẻ em behocvui với 100 cấp độ chủ đề phong phú, trò chơi sinh động, luyện phát âm, phần thưởng huy hiệu, bảng xếp hạng và báo cáo cho phụ huynh." />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet">
+  </head>
+  <body class="font-fredoka bg-amber-50 text-slate-800 antialiased selection:bg-amber-300">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+

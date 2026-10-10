@@ -1,0 +1,6 @@
+{
+  "name": "behocvui - Thế Giới Tiếng Anh Vui Nhộn Cho Trẻ Em",
+  "description": "Ứng dụng học tiếng Anh cho trẻ em behocvui với 100 cấp độ chủ đề phong phú, 50 từ vựng và câu hỏi mỗi cấp độ, trò chơi sinh động, luyện phát âm, phần thưởng huy hiệu, bảng xếp hạng và báo cáo cho phụ huynh.",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
