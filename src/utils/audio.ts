@@ -374,63 +374,98 @@ class KidSoundEngine {
 
 export const sound = new KidSoundEngine();
 
-// Speech Synthesis
+// ===== Speech Synthesis (tối ưu cho điện thoại) =====
+let cachedVoices: SpeechSynthesisVoice[] = [];
+
+const loadVoices = () => {
+  if (typeof window === 'undefined' || !window.speechSynthesis) return;
+  const v = window.speechSynthesis.getVoices();
+  if (v.length) cachedVoices = v;
+};
+
+if (typeof window !== 'undefined' && window.speechSynthesis) {
+  loadVoices();
+  window.speechSynthesis.addEventListener('voiceschanged', loadVoices);
+}
+
+const normLang = (l: string) => l.replace('_', '-').toLowerCase();
+
+const pickVoice = (lang: string): SpeechSynthesisVoice | undefined => {
+  const voices = cachedVoices.length
+    ? cachedVoices
+    : window.speechSynthesis.getVoices();
+  const target = lang.toLowerCase();
+  const prefix = target.split('-')[0];
+  const exact = voices.filter((v) => normLang(v.lang) === target);
+  const sameLang = voices.filter((v) => normLang(v.lang).startsWith(prefix));
+  const pool = exact.length ? exact : sameLang;
+  return (
+    pool.find((v) => /Samantha|Natural|Google|Victoria/.test(v.name)) || pool[0]
+  );
+};
+
+const speak = (
+  text: string,
+  lang: string,
+  rate: number,
+  pitch: number,
+  onEnd?: () => void
+) => {
+  if (typeof window === 'undefined' || !window.speechSynthesis) {
+    onEnd?.();
+    return;
+  }
+  const synth = window.speechSynthesis;
+  let finished = false;
+  const done = () => {
+    if (finished) return;
+    finished = true;
+    onEnd?.();
+  };
+
+  const run = () => {
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = lang;
+    u.rate = rate;
+    u.pitch = pitch;
+    u.volume = 1;
+    const voice = pickVoice(lang);
+    if (voice) u.voice = voice;
+    u.onend = done;
+    u.onerror = done;
+    synth.speak(u);
+  };
+
+  // Chỉ hủy khi đang đọc, và chờ một chút để điện thoại không nuốt lệnh mới
+  if (synth.speaking || synth.pending) {
+    synth.cancel();
+    setTimeout(run, 100);
+  } else {
+    run();
+  }
+};
+
+// Mở khóa giọng nói ở lần chạm đầu tiên (cần cho iPhone/Safari)
+let speechUnlocked = false;
+export const unlockSpeech = () => {
+  if (speechUnlocked || typeof window === 'undefined' || !window.speechSynthesis) return;
+  speechUnlocked = true;
+  const u = new SpeechSynthesisUtterance(' ');
+  u.volume = 0;
+  window.speechSynthesis.speak(u);
+};
+
+if (typeof window !== 'undefined') {
+  const unlock = () => unlockSpeech();
+  window.addEventListener('touchend', unlock, { once: true });
+  window.addEventListener('click', unlock, { once: true });
+}
+
 export const speakEnglish = (
   text: string,
   speed: number = 0.9,
   onEnd?: () => void
-) => {
-  if (typeof window === 'undefined' || !window.speechSynthesis) {
-    if (onEnd) onEnd();
-    return;
-  }
+) => speak(text, 'en-US', speed, 1.15, onEnd);
 
-  window.speechSynthesis.cancel(); // Stop any pending speech
-
-  const utterance = new SpeechSynthesisUtterance(text);
-  utterance.lang = 'en-US';
-  utterance.rate = speed;
-  utterance.pitch = 1.15; // friendly, slightly higher pitch for kids
-
-  // Try finding a nice US English voice
-  const voices = window.speechSynthesis.getVoices();
-  const usVoice = voices.find(
-    (v) =>
-      v.lang.startsWith('en') &&
-      (v.name.includes('Natural') ||
-        v.name.includes('Samantha') ||
-        v.name.includes('Google') ||
-        v.name.includes('Victoria'))
-  ) || voices.find((v) => v.lang.startsWith('en'));
-
-  if (usVoice) {
-    utterance.voice = usVoice;
-  }
-
-  if (onEnd) {
-    utterance.onend = () => onEnd();
-    utterance.onerror = () => onEnd();
-  }
-
-  window.speechSynthesis.speak(utterance);
-};
-
-export const speakVietnamese = (text: string, onEnd?: () => void) => {
-  if (typeof window === 'undefined' || !window.speechSynthesis) {
-    if (onEnd) onEnd();
-    return;
-  }
-
-  window.speechSynthesis.cancel();
-  const utterance = new SpeechSynthesisUtterance(text);
-  utterance.lang = 'vi-VN';
-  utterance.rate = 0.95;
-  utterance.pitch = 1.1;
-
-  if (onEnd) {
-    utterance.onend = () => onEnd();
-    utterance.onerror = () => onEnd();
-  }
-
-  window.speechSynthesis.speak(utterance);
-};
+export const speakVietnamese = (text: string, onEnd?: () => void) =>
+  speak(text, 'vi-VN', 0.95, 1.1, onEnd);
